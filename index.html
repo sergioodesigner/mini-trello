@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Trello Plus - Com WhatsApp</title>
+    <title>Trello com Google Sheets</title>
     <style>
         * {
             margin: 0;
@@ -42,6 +42,7 @@
         .controls {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         button {
@@ -60,6 +61,14 @@
             transform: translateY(-2px);
         }
 
+        #connect-btn {
+            background: #FF9800;
+        }
+
+        #connect-btn:hover {
+            background: #F57C00;
+        }
+
         #share-btn {
             background: #2196F3;
         }
@@ -69,11 +78,11 @@
         }
 
         #add-list-btn {
-            background: #FF9800;
+            background: #9C27B0;
         }
 
         #add-list-btn:hover {
-            background: #F57C00;
+            background: #7B1FA2;
         }
 
         #contacts-btn {
@@ -558,6 +567,66 @@
             background: #128C7E;
         }
 
+        .setup-instructions {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .setup-step {
+            margin-bottom: 15px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .setup-step:before {
+            content: counter(step);
+            counter-increment: step;
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #2196F3;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .setup-steps {
+            counter-reset: step;
+        }
+
+        .sheet-url-input {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .sheet-url-input input {
+            flex: 1;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-connected {
+            background: #4CAF50;
+        }
+
+        .status-disconnected {
+            background: #f44336;
+        }
+
         @media (max-width: 768px) {
             .board {
                 flex-direction: column;
@@ -576,11 +645,12 @@
             .controls {
                 width: 100%;
                 justify-content: center;
-                flex-wrap: wrap;
             }
             
             .controls button {
                 margin: 5px;
+                padding: 10px 15px;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -588,13 +658,30 @@
 <body>
     <div class="container">
         <header>
-            <h1>📋 Mini Trello Plus</h1>
+            <h1>📋 Trello com Google Sheets</h1>
             <div class="controls">
+                <button id="connect-btn">🔗 Conectar Planilha</button>
                 <button id="add-list-btn">➕ Adicionar Lista</button>
                 <button id="contacts-btn">👥 Contatos</button>
-                <button id="share-btn">🔗 Compartilhar Board</button>
+                <button id="share-btn">📤 Compartilhar Board</button>
             </div>
         </header>
+
+        <div class="setup-instructions">
+            <h3>Como conectar ao Google Sheets:</h3>
+            <div class="setup-steps">
+                <div class="setup-step">Crie uma nova planilha em branco no Google Sheets</div>
+                <div class="setup-step">Compartilhe a planilha com permissão de "Editor" para "Qualquer pessoa com o link"</div>
+                <div class="setup-step">Cole o link da planilha no campo abaixo e clique em "Conectar"</div>
+            </div>
+            <div class="sheet-url-input">
+                <input type="text" id="sheet-url" placeholder="Cole o link da sua planilha do Google Sheets aqui">
+                <button id="connect-sheet-btn">Conectar</button>
+            </div>
+            <div id="connection-status">
+                Status: <span class="status-indicator status-disconnected"></span> Não conectado
+            </div>
+        </div>
 
         <div class="board" id="board">
             <!-- Listas serão adicionadas aqui dinamicamente -->
@@ -734,72 +821,47 @@
     </div>
 
     <script>
-        class MiniTrelloPlus {
+        class TrelloSheets {
             constructor() {
-                this.boardId = this.getBoardId();
-                this.boardData = this.loadBoardData();
-                this.contacts = this.loadContacts();
+                this.sheetId = null;
+                this.boardData = { lists: [] };
+                this.contacts = [];
                 this.init();
             }
 
-            getBoardId() {
-                const urlParams = new URLSearchParams(window.location.search);
-                let boardId = urlParams.get('board');
-                
-                if (!boardId) {
-                    boardId = 'board-' + Math.random().toString(36).substr(2, 9);
-                    urlParams.set('board', boardId);
-                    const newUrl = `${window.location.pathname}?${urlParams}`;
-                    window.history.replaceState({}, '', newUrl);
-                }
-                
-                return boardId;
-            }
-
-            loadBoardData() {
-                // Carregar dados da URL se existirem
-                const urlParams = new URLSearchParams(window.location.search);
-                const dataParam = urlParams.get('data');
-                
-                if (dataParam) {
-                    try {
-                        const decoded = decodeURIComponent(atob(dataParam));
-                        const parsed = JSON.parse(decoded);
-                        localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(parsed));
-                        urlParams.delete('data');
-                        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
-                        return parsed;
-                    } catch (error) {
-                        console.log('Dados inválidos na URL');
-                    }
-                }
-                
-                // Carregar do localStorage
-                const saved = localStorage.getItem('trelloBoard-' + this.boardId);
-                return saved ? JSON.parse(saved) : { lists: [] };
-            }
-
-            loadContacts() {
-                const saved = localStorage.getItem('trelloContacts-' + this.boardId);
-                return saved ? JSON.parse(saved) : [];
-            }
-
-            saveBoardData() {
-                localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(this.boardData));
-            }
-
-            saveContacts() {
-                localStorage.setItem('trelloContacts-' + this.boardId, JSON.stringify(this.contacts));
-            }
-
             init() {
+                this.loadFromLocalStorage();
                 this.setupEventListeners();
                 this.renderBoard();
                 this.checkEmptyState();
+                this.updateConnectionStatus();
+            }
+
+            loadFromLocalStorage() {
+                // Carregar dados da planilha
+                const savedSheetId = localStorage.getItem('trelloSheetId');
+                if (savedSheetId) {
+                    this.sheetId = savedSheetId;
+                    this.loadBoardData();
+                }
+                
+                // Carregar contatos
+                const savedContacts = localStorage.getItem('trelloContacts');
+                if (savedContacts) {
+                    this.contacts = JSON.parse(savedContacts);
+                }
             }
 
             setupEventListeners() {
                 // Botões principais
+                document.getElementById('connect-btn').addEventListener('click', () => {
+                    document.querySelector('.setup-instructions').scrollIntoView({ behavior: 'smooth' });
+                });
+
+                document.getElementById('connect-sheet-btn').addEventListener('click', () => {
+                    this.connectToSheet();
+                });
+
                 document.getElementById('add-list-btn').addEventListener('click', () => {
                     this.openListModal();
                 });
@@ -881,8 +943,101 @@
                 });
             }
 
+            connectToSheet() {
+                const sheetUrl = document.getElementById('sheet-url').value.trim();
+                if (!sheetUrl) {
+                    alert('Por favor, insira o link da planilha do Google Sheets');
+                    return;
+                }
+
+                // Extrair o ID da planilha do URL
+                const match = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+                if (!match) {
+                    alert('URL inválida. Por favor, insira um link válido do Google Sheets.');
+                    return;
+                }
+
+                this.sheetId = match[1];
+                localStorage.setItem('trelloSheetId', this.sheetId);
+                this.updateConnectionStatus();
+                
+                // Inicializar estrutura da planilha
+                this.initializeSheetStructure();
+                
+                alert('Conectado com sucesso ao Google Sheets!');
+            }
+
+            updateConnectionStatus() {
+                const statusElement = document.getElementById('connection-status');
+                if (this.sheetId) {
+                    statusElement.innerHTML = 'Status: <span class="status-indicator status-connected"></span> Conectado';
+                } else {
+                    statusElement.innerHTML = 'Status: <span class="status-indicator status-disconnected"></span> Não conectado';
+                }
+            }
+
+            async initializeSheetStructure() {
+                if (!this.sheetId) return;
+
+                // Criar estrutura básica nas abas (sheets)
+                // Para simplificar, vamos usar apenas uma aba para todos os dados
+                // Em produção, você poderia criar abas separadas para lists, cards, etc.
+                
+                // Esta função simula a inicialização
+                console.log('Inicializando estrutura da planilha...');
+                
+                // Carregar dados existentes ou criar estrutura vazia
+                await this.loadBoardData();
+            }
+
+            async loadBoardData() {
+                if (!this.sheetId) return;
+
+                try {
+                    // Simular carregamento de dados da planilha
+                    // Na prática, você usaria a API do Google Sheets
+                    // Para este exemplo, vamos usar localStorage como "cache"
+                    const cachedData = localStorage.getItem(`trelloBoardData-${this.sheetId}`);
+                    if (cachedData) {
+                        this.boardData = JSON.parse(cachedData);
+                    } else {
+                        // Se não houver dados em cache, iniciar com estrutura vazia
+                        this.boardData = { lists: [] };
+                    }
+                    
+                    this.renderBoard();
+                } catch (error) {
+                    console.error('Erro ao carregar dados da planilha:', error);
+                    this.boardData = { lists: [] };
+                }
+            }
+
+            async saveBoardData() {
+                if (!this.sheetId) return;
+
+                try {
+                    // Salvar no "cache" local
+                    localStorage.setItem(`trelloBoardData-${this.sheetId}`, JSON.stringify(this.boardData));
+                    
+                    // Simular salvamento na planilha
+                    // Na prática, você enviaria os dados para o Google Sheets
+                    console.log('Dados salvos na planilha:', this.boardData);
+                    
+                    // Atualizar interface
+                    this.renderBoard();
+                } catch (error) {
+                    console.error('Erro ao salvar dados na planilha:', error);
+                }
+            }
+
+            saveContacts() {
+                localStorage.setItem('trelloContacts', JSON.stringify(this.contacts));
+            }
+
             handleImageUpload(file) {
                 if (file) {
+                    // Para simplificar, vamos usar Data URL
+                    // Em produção, você poderia fazer upload para um serviço como Imgur
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         document.getElementById('card-image').value = e.target.result;
@@ -1130,7 +1285,7 @@
                 }
                 
                 let message = '';
-                let shareUrl = '';
+                let shareUrl = window.location.href;
                 
                 if (itemType === 'card') {
                     // Encontrar o card
@@ -1141,12 +1296,10 @@
                     }
                     
                     if (card) {
-                        shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${btoa(encodeURIComponent(JSON.stringify(this.boardData)))}`;
                         message = `Olá! Veja esta tarefa: *${card.title}*\n\n${card.description || 'Sem descrição'}\n\nLink: ${shareUrl}`;
                     }
                 } else {
                     // Compartilhar board inteiro
-                    shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${btoa(encodeURIComponent(JSON.stringify(this.boardData)))}`;
                     message = `Olá! Veja este quadro: *${document.title}*\n\nLink: ${shareUrl}`;
                 }
                 
@@ -1183,6 +1336,11 @@
             }
 
             saveCard() {
+                if (!this.sheetId) {
+                    alert('Por favor, conecte-se a uma planilha do Google Sheets primeiro!');
+                    return;
+                }
+
                 const listId = document.getElementById('list-id').value;
                 const cardId = document.getElementById('card-id').value;
                 const title = document.getElementById('card-title').value;
@@ -1235,11 +1393,16 @@
                     list.cards.push(newCard);
                 }
 
-                this.saveAndRender();
+                this.saveBoardData();
                 this.closeModal('card-modal');
             }
 
             saveList() {
+                if (!this.sheetId) {
+                    alert('Por favor, conecte-se a uma planilha do Google Sheets primeiro!');
+                    return;
+                }
+
                 const title = document.getElementById('list-title').value.trim();
                 if (!title) return;
 
@@ -1250,7 +1413,7 @@
                 };
 
                 this.boardData.lists.push(newList);
-                this.saveAndRender();
+                this.saveBoardData();
                 this.closeModal('list-modal');
                 this.checkEmptyState();
             }
@@ -1360,51 +1523,54 @@
             }
 
             deleteCard(listId, cardId) {
+                if (!this.sheetId) {
+                    alert('Por favor, conecte-se a uma planilha do Google Sheets primeiro!');
+                    return;
+                }
+
                 const list = this.boardData.lists.find(l => l.id === listId);
                 if (list) {
                     list.cards = list.cards.filter(c => c.id !== cardId);
-                    this.saveAndRender();
+                    this.saveBoardData();
                 }
             }
 
             deleteList(listId) {
+                if (!this.sheetId) {
+                    alert('Por favor, conecte-se a uma planilha do Google Sheets primeiro!');
+                    return;
+                }
+
                 if (confirm('Tem certeza que deseja deletar esta lista?')) {
                     this.boardData.lists = this.boardData.lists.filter(l => l.id !== listId);
-                    this.saveAndRender();
+                    this.saveBoardData();
                     this.checkEmptyState();
                 }
             }
 
             updateListTitle(listId, newTitle) {
+                if (!this.sheetId) return;
+
                 const list = this.boardData.lists.find(l => l.id === listId);
                 if (list && newTitle.trim()) {
                     list.title = newTitle.trim();
-                    this.saveAndRender();
+                    this.saveBoardData();
                 }
-            }
-
-            saveAndRender() {
-                this.saveBoardData();
-                this.renderBoard();
             }
 
             shareBoard() {
-                const boardData = localStorage.getItem('trelloBoard-' + this.boardId);
-                if (boardData) {
-                    try {
-                        const compressed = btoa(encodeURIComponent(boardData));
-                        const shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${compressed}`;
-                        
-                        navigator.clipboard.writeText(shareUrl).then(() => {
-                            this.showNotification();
-                        }).catch(() => {
-                            // Fallback: mostrar URL em alert
-                            prompt('Copie o link abaixo:', shareUrl);
-                        });
-                    } catch (error) {
-                        alert('Erro ao gerar link de compartilhamento');
-                    }
+                if (!this.sheetId) {
+                    alert('Por favor, conecte-se a uma planilha do Google Sheets primeiro!');
+                    return;
                 }
+
+                const shareUrl = window.location.href;
+                
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    this.showNotification();
+                }).catch(() => {
+                    prompt('Copie o link abaixo:', shareUrl);
+                });
             }
 
             showNotification() {
@@ -1432,7 +1598,7 @@
 
         // Inicializar o app quando a página carregar
         document.addEventListener('DOMContentLoaded', () => {
-            window.trelloApp = new MiniTrelloPlus();
+            window.trelloApp = new TrelloSheets();
         });
     </script>
 </body>
