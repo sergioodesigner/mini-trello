@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Trello - Compartilhamento via URL</title>
+    <title>Mini Trello - Com Checklists e Imagens</title>
     <style>
         * {
             margin: 0;
@@ -19,17 +19,8 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-        }
-
-        .instructions {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
         }
 
         header {
@@ -41,20 +32,16 @@
             padding: 20px;
             border-radius: 15px;
             backdrop-filter: blur(10px);
-            flex-wrap: wrap;
-            gap: 15px;
         }
 
         h1 {
             color: white;
             font-size: 2rem;
-            margin: 0;
         }
 
         .controls {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         button {
@@ -66,9 +53,6 @@
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
 
         button:hover {
@@ -92,35 +76,6 @@
             background: #F57C00;
         }
 
-        #refresh-btn {
-            background: #9C27B0;
-        }
-
-        #refresh-btn:hover {
-            background: #7B1FA2;
-        }
-
-        .auto-refresh {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 15px;
-            border-radius: 8px;
-            color: white;
-        }
-
-        .auto-refresh label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
-
-        .auto-refresh input {
-            margin: 0;
-        }
-
         .board {
             display: flex;
             gap: 20px;
@@ -132,7 +87,7 @@
         .list {
             background: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
-            min-width: 300px;
+            min-width: 320px;
             padding: 15px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
@@ -180,8 +135,8 @@
         .card {
             background: white;
             border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             cursor: pointer;
             transition: all 0.2s;
@@ -194,27 +149,89 @@
         }
 
         .card-title {
-            font-weight: 500;
-            margin-bottom: 5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
         }
 
         .card-desc {
             font-size: 0.9rem;
             color: #666;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .card-image {
+            width: 100%;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            max-height: 200px;
+            object-fit: cover;
+        }
+
+        .checklist-container {
+            margin: 15px 0;
+        }
+
+        .checklist-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .checklist-items {
+            margin-left: 25px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .checklist-progress {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .checklist-progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+            color: #777;
         }
 
         .delete-card {
             position: absolute;
-            top: 5px;
-            right: 5px;
+            top: 8px;
+            right: 8px;
             background: #f44336;
             color: white;
             border: none;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 12px;
             opacity: 0;
             transition: opacity 0.2s;
         }
@@ -227,7 +244,7 @@
             background: rgba(0, 0, 0, 0.05);
             border: 2px dashed rgba(0, 0, 0, 0.1);
             border-radius: 8px;
-            padding: 12px;
+            padding: 15px;
             text-align: center;
             cursor: pointer;
             color: #666;
@@ -258,13 +275,16 @@
             padding: 30px;
             border-radius: 15px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .modal h2 {
             margin-bottom: 20px;
             color: #333;
+            text-align: center;
         }
 
         .form-group {
@@ -292,10 +312,52 @@
             resize: vertical;
         }
 
+        .image-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .checklist-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .checklist-item-input {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .checklist-item-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .checklist-item-input button {
+            padding: 8px 15px;
+            background: #2196F3;
+        }
+
+        .existing-checklist {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+
         .modal-buttons {
             display: flex;
             gap: 10px;
             justify-content: flex-end;
+            margin-top: 20px;
         }
 
         .btn-cancel {
@@ -304,6 +366,14 @@
 
         .btn-cancel:hover {
             background: #d32f2f;
+        }
+
+        .btn-secondary {
+            background: #9E9E9E;
+        }
+
+        .btn-secondary:hover {
+            background: #757575;
         }
 
         .notification {
@@ -340,11 +410,25 @@
             font-size: 1.2rem;
         }
 
-        .last-update {
-            color: rgba(255, 255, 255, 0.8);
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .card-action-btn {
+            flex: 1;
+            padding: 10px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
             font-size: 0.9rem;
-            text-align: center;
-            margin-top: 20px;
+            transition: all 0.2s;
+        }
+
+        .card-action-btn:hover {
+            background: #e0e0e0;
         }
 
         @media (max-width: 768px) {
@@ -358,15 +442,11 @@
             
             header {
                 flex-direction: column;
+                gap: 15px;
                 text-align: center;
             }
             
             .controls {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .auto-refresh {
                 width: 100%;
                 justify-content: center;
             }
@@ -375,23 +455,11 @@
 </head>
 <body>
     <div class="container">
-        <div class="instructions">
-            <strong>💡 Instruções:</strong> Crie seu board, adicione listas e cards, depois clique em "Compartilhar Board" para gerar um link que você pode enviar para amigos! 
-            O board é atualizado automaticamente a cada 3 segundos.
-        </div>
-        
         <header>
-            <h1>📋 Mini Trello</h1>
+            <h1>📋 Mini Trello Plus</h1>
             <div class="controls">
                 <button id="add-list-btn">➕ Adicionar Lista</button>
-                <button id="refresh-btn">🔄 Atualizar</button>
                 <button id="share-btn">🔗 Compartilhar Board</button>
-            </div>
-            <div class="auto-refresh">
-                <label>
-                    <input type="checkbox" id="auto-refresh-toggle" checked>
-                    Atualização automática
-                </label>
             </div>
         </header>
 
@@ -405,10 +473,6 @@
             <button id="add-first-list" style="background: #4CAF50; padding: 15px 30px; font-size: 1.1rem;">
                 ➕ Adicionar Primeira Lista
             </button>
-        </div>
-
-        <div class="last-update" id="last-update">
-            Última atualização: Agora
         </div>
     </div>
 
@@ -428,6 +492,22 @@
                 <div class="form-group">
                     <label for="card-desc">Descrição:</label>
                     <textarea id="card-desc"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card-image">Imagem (URL ou upload):</label>
+                    <input type="text" id="card-image" placeholder="Cole a URL da imagem">
+                    <input type="file" id="image-upload" accept="image/*" style="margin-top: 10px;">
+                    <img id="image-preview" class="image-preview" alt="Pré-visualização">
+                </div>
+                
+                <div class="checklist-section">
+                    <h3>Checklists</h3>
+                    <div id="existing-checklists"></div>
+                    <div class="checklist-item-input">
+                        <input type="text" id="new-checklist-item" placeholder="Adicionar item à checklist">
+                        <button type="button" id="add-checklist-item">➕</button>
+                    </div>
                 </div>
                 
                 <div class="modal-buttons">
@@ -462,78 +542,62 @@
     </div>
 
     <script>
-        class MiniTrello {
+        class MiniTrelloPlus {
             constructor() {
                 this.boardId = this.getBoardId();
                 this.boardData = this.loadBoardData();
-                this.lastUpdateCheck = Date.now();
-                this.autoRefreshInterval = null;
-                this.storageListener = null;
                 this.init();
             }
 
             getBoardId() {
-                try {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    let boardId = urlParams.get('board');
-                    
-                    if (!boardId) {
-                        boardId = 'board-' + Math.random().toString(36).substr(2, 9);
-                        if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
-                            urlParams.set('board', boardId);
-                            const newUrl = `${window.location.pathname}?${urlParams}`;
-                            window.history.replaceState({}, '', newUrl);
-                        }
-                    }
-                    
-                    return boardId;
-                } catch (error) {
-                    return 'board-local-' + Math.random().toString(36).substr(2, 9);
+                const urlParams = new URLSearchParams(window.location.search);
+                let boardId = urlParams.get('board');
+                
+                if (!boardId) {
+                    boardId = 'board-' + Math.random().toString(36).substr(2, 9);
+                    urlParams.set('board', boardId);
+                    const newUrl = `${window.location.pathname}?${urlParams}`;
+                    window.history.replaceState({}, '', newUrl);
                 }
+                
+                return boardId;
             }
 
             loadBoardData() {
-                try {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const dataParam = urlParams.get('data');
-                    
-                    if (dataParam) {
-                        try {
-                            const decoded = decodeURIComponent(atob(dataParam));
-                            const parsed = JSON.parse(decoded);
-                            localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(parsed));
-                            if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
-                                urlParams.delete('data');
-                                const newUrl = `${window.location.pathname}?${urlParams}`;
-                                window.history.replaceState({}, '', newUrl);
-                            }
-                            return parsed;
-                        } catch (error) {
-                            console.log('Dados inválidos na URL');
-                        }
+                // Carregar dados da URL se existirem
+                const urlParams = new URLSearchParams(window.location.search);
+                const dataParam = urlParams.get('data');
+                
+                if (dataParam) {
+                    try {
+                        const decoded = decodeURIComponent(atob(dataParam));
+                        const parsed = JSON.parse(decoded);
+                        localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(parsed));
+                        urlParams.delete('data');
+                        window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+                        return parsed;
+                    } catch (error) {
+                        console.log('Dados inválidos na URL');
                     }
-                } catch (error) {
-                    console.log('Não foi possível manipular URL parameters');
                 }
                 
+                // Carregar do localStorage
                 const saved = localStorage.getItem('trelloBoard-' + this.boardId);
                 return saved ? JSON.parse(saved) : { lists: [] };
             }
 
             saveBoardData() {
                 localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(this.boardData));
-                this.updateLastUpdate();
             }
 
             init() {
                 this.setupEventListeners();
                 this.renderBoard();
                 this.checkEmptyState();
-                this.startAutoRefresh();
-                this.setupStorageListener();
             }
 
             setupEventListeners() {
+                // Botões principais
                 document.getElementById('add-list-btn').addEventListener('click', () => {
                     this.openListModal();
                 });
@@ -546,18 +610,7 @@
                     this.shareBoard();
                 });
 
-                document.getElementById('refresh-btn').addEventListener('click', () => {
-                    this.refreshBoard();
-                });
-
-                document.getElementById('auto-refresh-toggle').addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        this.startAutoRefresh();
-                    } else {
-                        this.stopAutoRefresh();
-                    }
-                });
-
+                // Formulários
                 document.getElementById('card-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.saveCard();
@@ -568,6 +621,7 @@
                     this.saveList();
                 });
 
+                // Botões de cancelar
                 document.getElementById('cancel-card').addEventListener('click', () => {
                     this.closeModal('card-modal');
                 });
@@ -576,6 +630,24 @@
                     this.closeModal('list-modal');
                 });
 
+                // Upload de imagem
+                document.getElementById('image-upload').addEventListener('change', (e) => {
+                    this.handleImageUpload(e.target.files[0]);
+                });
+
+                // Adicionar item à checklist
+                document.getElementById('add-checklist-item').addEventListener('click', () => {
+                    this.addChecklistItem();
+                });
+
+                document.getElementById('new-checklist-item').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.addChecklistItem();
+                    }
+                });
+
+                // Fechar modais ao clicar fora
                 document.querySelectorAll('.modal').forEach(modal => {
                     modal.addEventListener('click', (e) => {
                         if (e.target === modal) {
@@ -583,6 +655,41 @@
                         }
                     });
                 });
+            }
+
+            handleImageUpload(file) {
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        document.getElementById('card-image').value = e.target.result;
+                        const preview = document.getElementById('image-preview');
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            addChecklistItem() {
+                const input = document.getElementById('new-checklist-item');
+                const itemText = input.value.trim();
+                
+                if (itemText) {
+                    const checklistContainer = document.getElementById('existing-checklists');
+                    const itemId = 'item-' + Date.now();
+                    
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'checklist-item';
+                    itemElement.innerHTML = `
+                        <input type="checkbox" data-item-id="${itemId}">
+                        <span>${itemText}</span>
+                        <button type="button" class="btn-secondary" style="margin-left: auto; padding: 2px 8px;" 
+                                onclick="this.parentElement.remove()">×</button>
+                    `;
+                    
+                    checklistContainer.appendChild(itemElement);
+                    input.value = '';
+                }
             }
 
             renderBoard() {
@@ -602,7 +709,7 @@
 
                 listDiv.innerHTML = `
                     <div class="list-header">
-                        <input type="text" class="list-title" value="${this.escapeHtml(list.title)}" data-list-id="${list.id}">
+                        <input type="text" class="list-title" value="${list.title}" data-list-id="${list.id}">
                         <button class="delete-list" data-list-id="${list.id}">×</button>
                     </div>
                     <div class="cards" id="cards-${list.id}">
@@ -611,6 +718,7 @@
                     <div class="add-card" data-list-id="${list.id}">➕ Adicionar um card</div>
                 `;
 
+                // Adicionar event listeners
                 listDiv.querySelector('.delete-list').addEventListener('click', (e) => {
                     this.deleteList(e.target.dataset.listId);
                 });
@@ -623,6 +731,7 @@
                     this.openCardModal(e.target.dataset.listId);
                 });
 
+                // Adicionar listeners para deletar cards
                 listDiv.querySelectorAll('.delete-card').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -632,6 +741,7 @@
                     });
                 });
 
+                // Adicionar listeners para editar cards
                 listDiv.querySelectorAll('.card').forEach(card => {
                     card.addEventListener('click', (e) => {
                         if (!e.target.classList.contains('delete-card')) {
@@ -645,30 +755,95 @@
             }
 
             createCardElement(card) {
+                let imageHtml = '';
+                if (card.image) {
+                    imageHtml = `<img src="${card.image}" class="card-image" alt="Imagem do card">`;
+                }
+
+                let checklistHtml = '';
+                if (card.checklists && card.checklists.length > 0) {
+                    const totalItems = card.checklists.reduce((total, checklist) => total + (checklist.items ? checklist.items.length : 0), 0);
+                    const completedItems = card.checklists.reduce((total, checklist) => {
+                        return total + (checklist.items ? checklist.items.filter(item => item.completed).length : 0);
+                    }, 0);
+                    
+                    const progress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+                    
+                    checklistHtml = `
+                        <div class="checklist-container">
+                            <div class="checklist-header">
+                                📋 Checklist (${completedItems}/${totalItems})
+                            </div>
+                            <div class="checklist-progress">
+                                <div class="checklist-progress-bar" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 return `
                     <div class="card" data-card-id="${card.id}">
                         <button class="delete-card" data-card-id="${card.id}">×</button>
-                        <div class="card-title">${this.escapeHtml(card.title)}</div>
-                        ${card.description ? `<div class="card-desc">${this.escapeHtml(card.description)}</div>` : ''}
+                        <div class="card-title">${card.title}</div>
+                        ${card.description ? `<div class="card-desc">${card.description}</div>` : ''}
+                        ${imageHtml}
+                        ${checklistHtml}
+                        <div class="card-footer">
+                            <span>${card.checklists && card.checklists.length > 0 ? '📋 Com checklist' : ''}</span>
+                            <span>${card.image ? '🖼️ Com imagem' : ''}</span>
+                        </div>
                     </div>
                 `;
-            }
-
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
             }
 
             openCardModal(listId, card = null) {
                 document.getElementById('list-id').value = listId;
                 document.getElementById('card-title').value = card ? card.title : '';
                 document.getElementById('card-desc').value = card ? card.description : '';
+                document.getElementById('card-image').value = card ? card.image : '';
                 document.getElementById('card-id').value = card ? card.id : '';
                 document.getElementById('modal-title').textContent = card ? 'Editar Card' : 'Adicionar Card';
                 
+                // Limpar checklist existente
+                document.getElementById('existing-checklists').innerHTML = '';
+                document.getElementById('new-checklist-item').value = '';
+                
+                // Carregar checklist se estiver editando
+                if (card && card.checklists) {
+                    this.loadChecklistForEdit(card.checklists);
+                }
+                
+                // Mostrar preview da imagem se existir
+                const preview = document.getElementById('image-preview');
+                if (card && card.image) {
+                    preview.src = card.image;
+                    preview.style.display = 'block';
+                } else {
+                    preview.style.display = 'none';
+                }
+                
                 this.openModal('card-modal');
                 document.getElementById('card-title').focus();
+            }
+
+            loadChecklistForEdit(checklists) {
+                const container = document.getElementById('existing-checklists');
+                
+                checklists.forEach(checklist => {
+                    if (checklist.items) {
+                        checklist.items.forEach(item => {
+                            const itemElement = document.createElement('div');
+                            itemElement.className = 'checklist-item';
+                            itemElement.innerHTML = `
+                                <input type="checkbox" data-item-id="${item.id}" ${item.completed ? 'checked' : ''}>
+                                <span>${item.text}</span>
+                                <button type="button" class="btn-secondary" style="margin-left: auto; padding: 2px 8px;" 
+                                        onclick="this.parentElement.remove()">×</button>
+                            `;
+                            container.appendChild(itemElement);
+                        });
+                    }
+                });
             }
 
             openListModal() {
@@ -690,23 +865,50 @@
                 const cardId = document.getElementById('card-id').value;
                 const title = document.getElementById('card-title').value;
                 const description = document.getElementById('card-desc').value;
+                const imageUrl = document.getElementById('card-image').value;
 
                 if (!title.trim()) return;
 
                 const list = this.boardData.lists.find(l => l.id === listId);
                 if (!list) return;
 
+                // Coletar itens da checklist
+                const checklistItems = [];
+                document.querySelectorAll('#existing-checklists .checklist-item').forEach(item => {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    const textSpan = item.querySelector('span');
+                    if (textSpan) {
+                        checklistItems.push({
+                            id: checkbox.dataset.itemId || 'item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                            text: textSpan.textContent,
+                            completed: checkbox.checked
+                        });
+                    }
+                });
+
+                const checklists = checklistItems.length > 0 ? [{
+                    id: 'checklist-' + Date.now(),
+                    items: checklistItems
+                }] : [];
+
                 if (cardId) {
+                    // Editar card existente
                     const card = list.cards.find(c => c.id === cardId);
                     if (card) {
                         card.title = title;
                         card.description = description;
+                        card.image = imageUrl;
+                        card.checklists = checklists;
                     }
                 } else {
+                    // Adicionar novo card
                     const newCard = {
                         id: 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
                         title: title,
-                        description: description
+                        description: description,
+                        image: imageUrl,
+                        checklists: checklists,
+                        createdAt: new Date().toISOString()
                     };
                     list.cards.push(newCard);
                 }
@@ -748,7 +950,7 @@
             }
 
             deleteList(listId) {
-                if (confirm('Tem certeza que deseja deletar esta lista e todos os seus cards?')) {
+                if (confirm('Tem certeza que deseja deletar esta lista?')) {
                     this.boardData.lists = this.boardData.lists.filter(l => l.id !== listId);
                     this.saveAndRender();
                     this.checkEmptyState();
@@ -768,97 +970,22 @@
                 this.renderBoard();
             }
 
-            // NOVAS FUNÇÕES PARA ATUALIZAÇÃO
-
-            refreshBoard() {
-                const newData = this.loadBoardData();
-                if (JSON.stringify(newData) !== JSON.stringify(this.boardData)) {
-                    this.boardData = newData;
-                    this.renderBoard();
-                    this.checkEmptyState();
-                    this.showRefreshNotification();
-                }
-                this.updateLastUpdate();
-            }
-
-            startAutoRefresh() {
-                this.stopAutoRefresh(); // Limpar intervalo anterior
-                this.autoRefreshInterval = setInterval(() => {
-                    this.refreshBoard();
-                }, 3000); // Atualiza a cada 3 segundos
-            }
-
-            stopAutoRefresh() {
-                if (this.autoRefreshInterval) {
-                    clearInterval(this.autoRefreshInterval);
-                    this.autoRefreshInterval = null;
-                }
-            }
-
-            setupStorageListener() {
-                // Listener para mudanças no localStorage (mesma aba)
-                window.addEventListener('storage', (e) => {
-                    if (e.key === 'trelloBoard-' + this.boardId) {
-                        this.refreshBoard();
-                    }
-                });
-            }
-
-            showRefreshNotification() {
-                const notification = document.createElement('div');
-                notification.className = 'notification';
-                notification.textContent = 'Board atualizado!';
-                notification.style.background = '#2196F3';
-                notification.style.right = '20px';
-                notification.style.top = '80px';
-                
-                document.body.appendChild(notification);
-                
-                // Animação
-                setTimeout(() => notification.classList.add('show'), 10);
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.parentNode.removeChild(notification);
-                        }
-                    }, 300);
-                }, 2000);
-            }
-
-            updateLastUpdate() {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('pt-BR');
-                document.getElementById('last-update').textContent = 
-                    `Última atualização: ${timeString}`;
-            }
-
             shareBoard() {
                 const boardData = localStorage.getItem('trelloBoard-' + this.boardId);
                 if (boardData) {
                     try {
                         const compressed = btoa(encodeURIComponent(boardData));
-                        
-                        let shareUrl;
-                        if (window.location.protocol === 'file:' || window.location.origin === 'null') {
-                            shareUrl = `${window.location.href.split('?')[0]}?board=${this.boardId}&data=${compressed}`;
-                        } else {
-                            shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${compressed}`;
-                        }
+                        const shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${compressed}`;
                         
                         navigator.clipboard.writeText(shareUrl).then(() => {
                             this.showNotification();
                         }).catch(() => {
-                            const result = prompt('Copie o link abaixo para compartilhar:', shareUrl);
-                            if (result !== null) {
-                                this.showNotification();
-                            }
+                            // Fallback: mostrar URL em alert
+                            prompt('Copie o link abaixo:', shareUrl);
                         });
                     } catch (error) {
-                        alert('Erro ao gerar link de compartilhamento. Tente novamente.');
+                        alert('Erro ao gerar link de compartilhamento');
                     }
-                } else {
-                    alert('Nenhum dado para compartilhar. Adicione algumas listas primeiro!');
                 }
             }
 
@@ -885,8 +1012,9 @@
             }
         }
 
+        // Inicializar o app quando a página carregar
         document.addEventListener('DOMContentLoaded', () => {
-            window.trelloApp = new MiniTrello();
+            window.trelloApp = new MiniTrelloPlus();
         });
     </script>
 </body>
