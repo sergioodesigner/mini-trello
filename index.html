@@ -23,6 +23,15 @@
             margin: 0 auto;
         }
 
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
         header {
             display: flex;
             justify-content: space-between;
@@ -32,16 +41,20 @@
             padding: 20px;
             border-radius: 15px;
             backdrop-filter: blur(10px);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         h1 {
             color: white;
             font-size: 2rem;
+            margin: 0;
         }
 
         .controls {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         button {
@@ -53,6 +66,9 @@
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         button:hover {
@@ -74,6 +90,35 @@
 
         #add-list-btn:hover {
             background: #F57C00;
+        }
+
+        #refresh-btn {
+            background: #9C27B0;
+        }
+
+        #refresh-btn:hover {
+            background: #7B1FA2;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .auto-refresh label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .auto-refresh input {
+            margin: 0;
         }
 
         .board {
@@ -295,13 +340,11 @@
             font-size: 1.2rem;
         }
 
-        .instructions {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+        .last-update {
+            color: rgba(255, 255, 255, 0.8);
             font-size: 0.9rem;
+            text-align: center;
+            margin-top: 20px;
         }
 
         @media (max-width: 768px) {
@@ -315,11 +358,15 @@
             
             header {
                 flex-direction: column;
-                gap: 15px;
                 text-align: center;
             }
             
             .controls {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .auto-refresh {
                 width: 100%;
                 justify-content: center;
             }
@@ -329,14 +376,22 @@
 <body>
     <div class="container">
         <div class="instructions">
-            <strong>💡 Instruções:</strong> Crie seu board, adicione listas e cards, depois clique em "Compartilhar Board" para gerar um link que você pode enviar para amigos!
+            <strong>💡 Instruções:</strong> Crie seu board, adicione listas e cards, depois clique em "Compartilhar Board" para gerar um link que você pode enviar para amigos! 
+            O board é atualizado automaticamente a cada 3 segundos.
         </div>
         
         <header>
             <h1>📋 Mini Trello</h1>
             <div class="controls">
                 <button id="add-list-btn">➕ Adicionar Lista</button>
+                <button id="refresh-btn">🔄 Atualizar</button>
                 <button id="share-btn">🔗 Compartilhar Board</button>
+            </div>
+            <div class="auto-refresh">
+                <label>
+                    <input type="checkbox" id="auto-refresh-toggle" checked>
+                    Atualização automática
+                </label>
             </div>
         </header>
 
@@ -350,6 +405,10 @@
             <button id="add-first-list" style="background: #4CAF50; padding: 15px 30px; font-size: 1.1rem;">
                 ➕ Adicionar Primeira Lista
             </button>
+        </div>
+
+        <div class="last-update" id="last-update">
+            Última atualização: Agora
         </div>
     </div>
 
@@ -407,18 +466,19 @@
             constructor() {
                 this.boardId = this.getBoardId();
                 this.boardData = this.loadBoardData();
+                this.lastUpdateCheck = Date.now();
+                this.autoRefreshInterval = null;
+                this.storageListener = null;
                 this.init();
             }
 
             getBoardId() {
-                // Verificar se estamos em um ambiente que suporta URL manipulation
                 try {
                     const urlParams = new URLSearchParams(window.location.search);
                     let boardId = urlParams.get('board');
                     
                     if (!boardId) {
                         boardId = 'board-' + Math.random().toString(36).substr(2, 9);
-                        // Só atualizar URL se estivermos em um contexto que permite
                         if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
                             urlParams.set('board', boardId);
                             const newUrl = `${window.location.pathname}?${urlParams}`;
@@ -428,13 +488,11 @@
                     
                     return boardId;
                 } catch (error) {
-                    // Fallback para ambiente local
                     return 'board-local-' + Math.random().toString(36).substr(2, 9);
                 }
             }
 
             loadBoardData() {
-                // Carregar dados da URL se existirem
                 try {
                     const urlParams = new URLSearchParams(window.location.search);
                     const dataParam = urlParams.get('data');
@@ -444,7 +502,6 @@
                             const decoded = decodeURIComponent(atob(dataParam));
                             const parsed = JSON.parse(decoded);
                             localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(parsed));
-                            // Remover parâmetro data da URL se possível
                             if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
                                 urlParams.delete('data');
                                 const newUrl = `${window.location.pathname}?${urlParams}`;
@@ -459,23 +516,24 @@
                     console.log('Não foi possível manipular URL parameters');
                 }
                 
-                // Carregar do localStorage
                 const saved = localStorage.getItem('trelloBoard-' + this.boardId);
                 return saved ? JSON.parse(saved) : { lists: [] };
             }
 
             saveBoardData() {
                 localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(this.boardData));
+                this.updateLastUpdate();
             }
 
             init() {
                 this.setupEventListeners();
                 this.renderBoard();
                 this.checkEmptyState();
+                this.startAutoRefresh();
+                this.setupStorageListener();
             }
 
             setupEventListeners() {
-                // Botões principais
                 document.getElementById('add-list-btn').addEventListener('click', () => {
                     this.openListModal();
                 });
@@ -488,7 +546,18 @@
                     this.shareBoard();
                 });
 
-                // Formulários
+                document.getElementById('refresh-btn').addEventListener('click', () => {
+                    this.refreshBoard();
+                });
+
+                document.getElementById('auto-refresh-toggle').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        this.startAutoRefresh();
+                    } else {
+                        this.stopAutoRefresh();
+                    }
+                });
+
                 document.getElementById('card-form').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.saveCard();
@@ -499,7 +568,6 @@
                     this.saveList();
                 });
 
-                // Botões de cancelar
                 document.getElementById('cancel-card').addEventListener('click', () => {
                     this.closeModal('card-modal');
                 });
@@ -508,7 +576,6 @@
                     this.closeModal('list-modal');
                 });
 
-                // Fechar modais ao clicar fora
                 document.querySelectorAll('.modal').forEach(modal => {
                     modal.addEventListener('click', (e) => {
                         if (e.target === modal) {
@@ -535,7 +602,7 @@
 
                 listDiv.innerHTML = `
                     <div class="list-header">
-                        <input type="text" class="list-title" value="${list.title}" data-list-id="${list.id}">
+                        <input type="text" class="list-title" value="${this.escapeHtml(list.title)}" data-list-id="${list.id}">
                         <button class="delete-list" data-list-id="${list.id}">×</button>
                     </div>
                     <div class="cards" id="cards-${list.id}">
@@ -544,7 +611,6 @@
                     <div class="add-card" data-list-id="${list.id}">➕ Adicionar um card</div>
                 `;
 
-                // Adicionar event listeners
                 listDiv.querySelector('.delete-list').addEventListener('click', (e) => {
                     this.deleteList(e.target.dataset.listId);
                 });
@@ -557,7 +623,6 @@
                     this.openCardModal(e.target.dataset.listId);
                 });
 
-                // Adicionar listeners para deletar cards
                 listDiv.querySelectorAll('.delete-card').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -567,7 +632,6 @@
                     });
                 });
 
-                // Adicionar listeners para editar cards
                 listDiv.querySelectorAll('.card').forEach(card => {
                     card.addEventListener('click', (e) => {
                         if (!e.target.classList.contains('delete-card')) {
@@ -633,14 +697,12 @@
                 if (!list) return;
 
                 if (cardId) {
-                    // Editar card existente
                     const card = list.cards.find(c => c.id === cardId);
                     if (card) {
                         card.title = title;
                         card.description = description;
                     }
                 } else {
-                    // Adicionar novo card
                     const newCard = {
                         id: 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
                         title: title,
@@ -706,27 +768,87 @@
                 this.renderBoard();
             }
 
+            // NOVAS FUNÇÕES PARA ATUALIZAÇÃO
+
+            refreshBoard() {
+                const newData = this.loadBoardData();
+                if (JSON.stringify(newData) !== JSON.stringify(this.boardData)) {
+                    this.boardData = newData;
+                    this.renderBoard();
+                    this.checkEmptyState();
+                    this.showRefreshNotification();
+                }
+                this.updateLastUpdate();
+            }
+
+            startAutoRefresh() {
+                this.stopAutoRefresh(); // Limpar intervalo anterior
+                this.autoRefreshInterval = setInterval(() => {
+                    this.refreshBoard();
+                }, 3000); // Atualiza a cada 3 segundos
+            }
+
+            stopAutoRefresh() {
+                if (this.autoRefreshInterval) {
+                    clearInterval(this.autoRefreshInterval);
+                    this.autoRefreshInterval = null;
+                }
+            }
+
+            setupStorageListener() {
+                // Listener para mudanças no localStorage (mesma aba)
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'trelloBoard-' + this.boardId) {
+                        this.refreshBoard();
+                    }
+                });
+            }
+
+            showRefreshNotification() {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = 'Board atualizado!';
+                notification.style.background = '#2196F3';
+                notification.style.right = '20px';
+                notification.style.top = '80px';
+                
+                document.body.appendChild(notification);
+                
+                // Animação
+                setTimeout(() => notification.classList.add('show'), 10);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 300);
+                }, 2000);
+            }
+
+            updateLastUpdate() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('pt-BR');
+                document.getElementById('last-update').textContent = 
+                    `Última atualização: ${timeString}`;
+            }
+
             shareBoard() {
                 const boardData = localStorage.getItem('trelloBoard-' + this.boardId);
                 if (boardData) {
                     try {
                         const compressed = btoa(encodeURIComponent(boardData));
                         
-                        // Criar URL de compartilhamento
                         let shareUrl;
                         if (window.location.protocol === 'file:' || window.location.origin === 'null') {
-                            // Ambiente local - usar caminho absoluto
                             shareUrl = `${window.location.href.split('?')[0]}?board=${this.boardId}&data=${compressed}`;
                         } else {
-                            // Servidor web - usar URL completa
                             shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${compressed}`;
                         }
                         
-                        // Tentar copiar para clipboard
                         navigator.clipboard.writeText(shareUrl).then(() => {
                             this.showNotification();
                         }).catch(() => {
-                            // Fallback: mostrar URL em prompt
                             const result = prompt('Copie o link abaixo para compartilhar:', shareUrl);
                             if (result !== null) {
                                 this.showNotification();
@@ -763,7 +885,6 @@
             }
         }
 
-        // Inicializar o app quando a página carregar
         document.addEventListener('DOMContentLoaded', () => {
             window.trelloApp = new MiniTrello();
         });
