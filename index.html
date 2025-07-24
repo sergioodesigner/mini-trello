@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Trello - Com Checklists e Imagens</title>
+    <title>Mini Trello Plus - Com WhatsApp</title>
     <style>
         * {
             margin: 0;
@@ -74,6 +74,14 @@
 
         #add-list-btn:hover {
             background: #F57C00;
+        }
+
+        #contacts-btn {
+            background: #4CAF50;
+        }
+
+        #contacts-btn:hover {
+            background: #45a049;
         }
 
         .board {
@@ -240,6 +248,29 @@
             opacity: 1;
         }
 
+        .whatsapp-share {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: #25D366;
+            color: white;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card:hover .whatsapp-share {
+            opacity: 1;
+        }
+
         .add-card {
             background: rgba(0, 0, 0, 0.05);
             border: 2px dashed rgba(0, 0, 0, 0.1);
@@ -299,7 +330,8 @@
         }
 
         .form-group input,
-        .form-group textarea {
+        .form-group textarea,
+        .form-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #ddd;
@@ -431,6 +463,101 @@
             background: #e0e0e0;
         }
 
+        .contacts-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .contact-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background: white;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .contact-phone {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .contact-action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .edit-contact {
+            background: #2196F3;
+            color: white;
+        }
+
+        .delete-contact {
+            background: #f44336;
+            color: white;
+        }
+
+        .whatsapp-modal-content {
+            max-width: 500px;
+        }
+
+        .whatsapp-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #25D366;
+        }
+
+        .whatsapp-header i {
+            font-size: 2rem;
+            margin-right: 10px;
+        }
+
+        .contact-select {
+            margin-bottom: 20px;
+        }
+
+        .message-preview {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+        }
+
+        .whatsapp-btn {
+            background: #25D366;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .whatsapp-btn:hover {
+            background: #128C7E;
+        }
+
         @media (max-width: 768px) {
             .board {
                 flex-direction: column;
@@ -449,6 +576,11 @@
             .controls {
                 width: 100%;
                 justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .controls button {
+                margin: 5px;
             }
         }
     </style>
@@ -459,6 +591,7 @@
             <h1>📋 Mini Trello Plus</h1>
             <div class="controls">
                 <button id="add-list-btn">➕ Adicionar Lista</button>
+                <button id="contacts-btn">👥 Contatos</button>
                 <button id="share-btn">🔗 Compartilhar Board</button>
             </div>
         </header>
@@ -536,6 +669,65 @@
         </div>
     </div>
 
+    <!-- Modal para gerenciar contatos -->
+    <div class="modal" id="contacts-modal">
+        <div class="modal-content">
+            <h2>👥 Gerenciar Contatos</h2>
+            
+            <form id="contact-form">
+                <div class="form-group">
+                    <label for="contact-name">Nome:</label>
+                    <input type="text" id="contact-name" placeholder="Nome do contato" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact-phone">Número do WhatsApp (com DDD):</label>
+                    <input type="tel" id="contact-phone" placeholder="Ex: 11999999999" required>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" id="cancel-contact">Cancelar</button>
+                    <button type="submit">Adicionar Contato</button>
+                </div>
+            </form>
+            
+            <div class="contacts-list" id="contacts-list">
+                <!-- Contatos serão adicionados aqui dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para compartilhar via WhatsApp -->
+    <div class="modal" id="whatsapp-modal">
+        <div class="modal-content whatsapp-modal-content">
+            <div class="whatsapp-header">
+                <span>💬</span>
+                <h2>Compartilhar via WhatsApp</h2>
+            </div>
+            
+            <input type="hidden" id="share-item-id">
+            <input type="hidden" id="share-item-type">
+            
+            <div class="form-group contact-select">
+                <label for="whatsapp-contact">Selecione um contato:</label>
+                <select id="whatsapp-contact">
+                    <option value="">Selecione um contato...</option>
+                </select>
+            </div>
+            
+            <div class="message-preview" id="message-preview">
+                <!-- Preview da mensagem será mostrado aqui -->
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" id="cancel-whatsapp">Cancelar</button>
+                <button type="button" class="whatsapp-btn" id="send-whatsapp">
+                    📲 Enviar via WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notificação -->
     <div class="notification" id="notification">
         Link copiado! Compartilhe com seus colegas.
@@ -546,6 +738,7 @@
             constructor() {
                 this.boardId = this.getBoardId();
                 this.boardData = this.loadBoardData();
+                this.contacts = this.loadContacts();
                 this.init();
             }
 
@@ -586,8 +779,17 @@
                 return saved ? JSON.parse(saved) : { lists: [] };
             }
 
+            loadContacts() {
+                const saved = localStorage.getItem('trelloContacts-' + this.boardId);
+                return saved ? JSON.parse(saved) : [];
+            }
+
             saveBoardData() {
                 localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(this.boardData));
+            }
+
+            saveContacts() {
+                localStorage.setItem('trelloContacts-' + this.boardId, JSON.stringify(this.contacts));
             }
 
             init() {
@@ -610,6 +812,10 @@
                     this.shareBoard();
                 });
 
+                document.getElementById('contacts-btn').addEventListener('click', () => {
+                    this.openContactsModal();
+                });
+
                 // Formulários
                 document.getElementById('card-form').addEventListener('submit', (e) => {
                     e.preventDefault();
@@ -621,6 +827,11 @@
                     this.saveList();
                 });
 
+                document.getElementById('contact-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveContact();
+                });
+
                 // Botões de cancelar
                 document.getElementById('cancel-card').addEventListener('click', () => {
                     this.closeModal('card-modal');
@@ -628,6 +839,14 @@
 
                 document.getElementById('cancel-list').addEventListener('click', () => {
                     this.closeModal('list-modal');
+                });
+
+                document.getElementById('cancel-contact').addEventListener('click', () => {
+                    this.closeModal('contacts-modal');
+                });
+
+                document.getElementById('cancel-whatsapp').addEventListener('click', () => {
+                    this.closeModal('whatsapp-modal');
                 });
 
                 // Upload de imagem
@@ -645,6 +864,11 @@
                         e.preventDefault();
                         this.addChecklistItem();
                     }
+                });
+
+                // Enviar via WhatsApp
+                document.getElementById('send-whatsapp').addEventListener('click', () => {
+                    this.sendViaWhatsApp();
                 });
 
                 // Fechar modais ao clicar fora
@@ -741,10 +965,20 @@
                     });
                 });
 
+                // Adicionar listeners para compartilhar cards via WhatsApp
+                listDiv.querySelectorAll('.whatsapp-share').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const cardId = e.target.dataset.cardId;
+                        this.openWhatsAppModal(cardId, 'card');
+                    });
+                });
+
                 // Adicionar listeners para editar cards
                 listDiv.querySelectorAll('.card').forEach(card => {
                     card.addEventListener('click', (e) => {
-                        if (!e.target.classList.contains('delete-card')) {
+                        if (!e.target.classList.contains('delete-card') && 
+                            !e.target.classList.contains('whatsapp-share')) {
                             const cardId = card.dataset.cardId;
                             this.editCard(list.id, cardId);
                         }
@@ -784,6 +1018,7 @@
                 return `
                     <div class="card" data-card-id="${card.id}">
                         <button class="delete-card" data-card-id="${card.id}">×</button>
+                        <button class="whatsapp-share" data-card-id="${card.id}">💬</button>
                         <div class="card-title">${card.title}</div>
                         ${card.description ? `<div class="card-desc">${card.description}</div>` : ''}
                         ${imageHtml}
@@ -850,6 +1085,93 @@
                 document.getElementById('list-title').value = '';
                 this.openModal('list-modal');
                 document.getElementById('list-title').focus();
+            }
+
+            openContactsModal() {
+                this.renderContacts();
+                this.openModal('contacts-modal');
+                document.getElementById('contact-name').focus();
+            }
+
+            openWhatsAppModal(itemId, itemType) {
+                document.getElementById('share-item-id').value = itemId;
+                document.getElementById('share-item-type').value = itemType;
+                
+                // Preencher select de contatos
+                const contactSelect = document.getElementById('whatsapp-contact');
+                contactSelect.innerHTML = '<option value="">Selecione um contato...</option>';
+                
+                this.contacts.forEach(contact => {
+                    const option = document.createElement('option');
+                    option.value = contact.phone;
+                    option.textContent = `${contact.name} (${contact.phone})`;
+                    contactSelect.appendChild(option);
+                });
+                
+                // Atualizar preview da mensagem
+                this.updateMessagePreview();
+                
+                // Adicionar listener para atualizar preview quando contato mudar
+                contactSelect.addEventListener('change', () => {
+                    this.updateMessagePreview();
+                });
+                
+                this.openModal('whatsapp-modal');
+            }
+
+            updateMessagePreview() {
+                const itemId = document.getElementById('share-item-id').value;
+                const itemType = document.getElementById('share-item-type').value;
+                const selectedContact = document.getElementById('whatsapp-contact').value;
+                
+                if (!selectedContact) {
+                    document.getElementById('message-preview').textContent = 'Selecione um contato para ver a prévia da mensagem';
+                    return;
+                }
+                
+                let message = '';
+                let shareUrl = '';
+                
+                if (itemType === 'card') {
+                    // Encontrar o card
+                    let card = null;
+                    for (const list of this.boardData.lists) {
+                        card = list.cards.find(c => c.id === itemId);
+                        if (card) break;
+                    }
+                    
+                    if (card) {
+                        shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${btoa(encodeURIComponent(JSON.stringify(this.boardData)))}`;
+                        message = `Olá! Veja esta tarefa: *${card.title}*\n\n${card.description || 'Sem descrição'}\n\nLink: ${shareUrl}`;
+                    }
+                } else {
+                    // Compartilhar board inteiro
+                    shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${btoa(encodeURIComponent(JSON.stringify(this.boardData)))}`;
+                    message = `Olá! Veja este quadro: *${document.title}*\n\nLink: ${shareUrl}`;
+                }
+                
+                document.getElementById('message-preview').textContent = message;
+            }
+
+            sendViaWhatsApp() {
+                const selectedContact = document.getElementById('whatsapp-contact').value;
+                const messagePreview = document.getElementById('message-preview').textContent;
+                
+                if (!selectedContact) {
+                    alert('Por favor, selecione um contato');
+                    return;
+                }
+                
+                // Formatar número (remover caracteres não numéricos)
+                const formattedNumber = selectedContact.replace(/\D/g, '');
+                
+                // Criar link do WhatsApp
+                const whatsappUrl = `https://wa.me/${formattedNumber}?text=${encodeURIComponent(messagePreview)}`;
+                
+                // Abrir em nova aba
+                window.open(whatsappUrl, '_blank');
+                
+                this.closeModal('whatsapp-modal');
             }
 
             openModal(modalId) {
@@ -931,6 +1253,102 @@
                 this.saveAndRender();
                 this.closeModal('list-modal');
                 this.checkEmptyState();
+            }
+
+            saveContact() {
+                const name = document.getElementById('contact-name').value.trim();
+                const phone = document.getElementById('contact-phone').value.trim();
+                
+                if (!name || !phone) {
+                    alert('Por favor, preencha todos os campos');
+                    return;
+                }
+                
+                // Verificar se o contato já existe
+                const existingContact = this.contacts.find(c => c.phone === phone);
+                if (existingContact) {
+                    alert('Este número já está cadastrado!');
+                    return;
+                }
+                
+                const newContact = {
+                    id: 'contact-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                    name: name,
+                    phone: phone
+                };
+                
+                this.contacts.push(newContact);
+                this.saveContacts();
+                this.renderContacts();
+                
+                // Limpar formulário
+                document.getElementById('contact-name').value = '';
+                document.getElementById('contact-phone').value = '';
+                
+                document.getElementById('contact-name').focus();
+            }
+
+            renderContacts() {
+                const contactsList = document.getElementById('contacts-list');
+                contactsList.innerHTML = '';
+                
+                if (this.contacts.length === 0) {
+                    contactsList.innerHTML = '<p style="text-align: center; color: #666;">Nenhum contato cadastrado</p>';
+                    return;
+                }
+                
+                this.contacts.forEach(contact => {
+                    const contactElement = document.createElement('div');
+                    contactElement.className = 'contact-item';
+                    contactElement.innerHTML = `
+                        <div class="contact-info">
+                            <div class="contact-name">${contact.name}</div>
+                            <div class="contact-phone">${contact.phone}</div>
+                        </div>
+                        <div class="contact-actions">
+                            <button class="contact-action-btn edit-contact" data-contact-id="${contact.id}">✏️</button>
+                            <button class="contact-action-btn delete-contact" data-contact-id="${contact.id}">🗑️</button>
+                        </div>
+                    `;
+                    
+                    contactsList.appendChild(contactElement);
+                });
+                
+                // Adicionar listeners para editar e deletar
+                document.querySelectorAll('.edit-contact').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const contactId = e.target.closest('.edit-contact').dataset.contactId;
+                        this.editContact(contactId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-contact').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const contactId = e.target.closest('.delete-contact').dataset.contactId;
+                        this.deleteContact(contactId);
+                    });
+                });
+            }
+
+            editContact(contactId) {
+                const contact = this.contacts.find(c => c.id === contactId);
+                if (contact) {
+                    document.getElementById('contact-name').value = contact.name;
+                    document.getElementById('contact-phone').value = contact.phone;
+                    
+                    // Remover o contato da lista para edição
+                    this.contacts = this.contacts.filter(c => c.id !== contactId);
+                    this.saveContacts();
+                    this.renderContacts();
+                }
+            }
+
+            deleteContact(contactId) {
+                if (confirm('Tem certeza que deseja remover este contato?')) {
+                    this.contacts = this.contacts.filter(c => c.id !== contactId);
+                    this.saveContacts();
+                    this.renderContacts();
+                }
             }
 
             editCard(listId, cardId) {
