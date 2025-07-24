@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Trello - Compartilhamento via URL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            color: white;
+            font-size: 2rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        #share-btn {
+            background: #2196F3;
+        }
+
+        #share-btn:hover {
+            background: #1976D2;
+        }
+
+        #add-list-btn {
+            background: #FF9800;
+        }
+
+        #add-list-btn:hover {
+            background: #F57C00;
+        }
+
+        .board {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+            min-height: 500px;
+        }
+
+        .list {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            min-width: 300px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .list-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #333;
+            border: none;
+            background: transparent;
+            padding: 5px;
+            width: 80%;
+        }
+
+        .list-title:focus {
+            outline: 2px solid #2196F3;
+            border-radius: 4px;
+        }
+
+        .delete-list {
+            background: #f44336;
+            color: white;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .cards {
+            min-height: 100px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .delete-card {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #f44336;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 10px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .card:hover .delete-card {
+            opacity: 1;
+        }
+
+        .add-card {
+            background: rgba(0, 0, 0, 0.05);
+            border: 2px dashed rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: #666;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .add-card:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #333;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: #f44336;
+        }
+
+        .btn-cancel:hover {
+            background: #d32f2f;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateX(400px);
+            transition: transform 0.3s ease-in-out;
+            z-index: 2000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 50px 20px;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .empty-state p {
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .board {
+                flex-direction: column;
+            }
+            
+            .list {
+                min-width: 100%;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .controls {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="instructions">
+            <strong>💡 Instruções:</strong> Crie seu board, adicione listas e cards, depois clique em "Compartilhar Board" para gerar um link que você pode enviar para amigos!
+        </div>
+        
+        <header>
+            <h1>📋 Mini Trello</h1>
+            <div class="controls">
+                <button id="add-list-btn">➕ Adicionar Lista</button>
+                <button id="share-btn">🔗 Compartilhar Board</button>
+            </div>
+        </header>
+
+        <div class="board" id="board">
+            <!-- Listas serão adicionadas aqui dinamicamente -->
+        </div>
+
+        <div class="empty-state" id="empty-state">
+            <h2>✨ Seu board está vazio</h2>
+            <p>Comece adicionando uma lista para organizar suas tarefas!</p>
+            <button id="add-first-list" style="background: #4CAF50; padding: 15px 30px; font-size: 1.1rem;">
+                ➕ Adicionar Primeira Lista
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar/editar card -->
+    <div class="modal" id="card-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Adicionar Card</h2>
+            <form id="card-form">
+                <input type="hidden" id="card-id">
+                <input type="hidden" id="list-id">
+                
+                <div class="form-group">
+                    <label for="card-title">Título:</label>
+                    <input type="text" id="card-title" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="card-desc">Descrição:</label>
+                    <textarea id="card-desc"></textarea>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" id="cancel-card">Cancelar</button>
+                    <button type="submit">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar lista -->
+    <div class="modal" id="list-modal">
+        <div class="modal-content">
+            <h2>Adicionar Nova Lista</h2>
+            <form id="list-form">
+                <div class="form-group">
+                    <label for="list-title">Nome da Lista:</label>
+                    <input type="text" id="list-title" placeholder="Ex: To Do, Doing, Done" required>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" class="btn-cancel" id="cancel-list">Cancelar</button>
+                    <button type="submit">Adicionar Lista</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notificação -->
+    <div class="notification" id="notification">
+        Link copiado! Compartilhe com seus colegas.
+    </div>
+
+    <script>
+        class MiniTrello {
+            constructor() {
+                this.boardId = this.getBoardId();
+                this.boardData = this.loadBoardData();
+                this.init();
+            }
+
+            getBoardId() {
+                // Verificar se estamos em um ambiente que suporta URL manipulation
+                try {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    let boardId = urlParams.get('board');
+                    
+                    if (!boardId) {
+                        boardId = 'board-' + Math.random().toString(36).substr(2, 9);
+                        // Só atualizar URL se estivermos em um contexto que permite
+                        if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
+                            urlParams.set('board', boardId);
+                            const newUrl = `${window.location.pathname}?${urlParams}`;
+                            window.history.replaceState({}, '', newUrl);
+                        }
+                    }
+                    
+                    return boardId;
+                } catch (error) {
+                    // Fallback para ambiente local
+                    return 'board-local-' + Math.random().toString(36).substr(2, 9);
+                }
+            }
+
+            loadBoardData() {
+                // Carregar dados da URL se existirem
+                try {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const dataParam = urlParams.get('data');
+                    
+                    if (dataParam) {
+                        try {
+                            const decoded = decodeURIComponent(atob(dataParam));
+                            const parsed = JSON.parse(decoded);
+                            localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(parsed));
+                            // Remover parâmetro data da URL se possível
+                            if (window.location.protocol !== 'file:' && window.location.origin !== 'null') {
+                                urlParams.delete('data');
+                                const newUrl = `${window.location.pathname}?${urlParams}`;
+                                window.history.replaceState({}, '', newUrl);
+                            }
+                            return parsed;
+                        } catch (error) {
+                            console.log('Dados inválidos na URL');
+                        }
+                    }
+                } catch (error) {
+                    console.log('Não foi possível manipular URL parameters');
+                }
+                
+                // Carregar do localStorage
+                const saved = localStorage.getItem('trelloBoard-' + this.boardId);
+                return saved ? JSON.parse(saved) : { lists: [] };
+            }
+
+            saveBoardData() {
+                localStorage.setItem('trelloBoard-' + this.boardId, JSON.stringify(this.boardData));
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.renderBoard();
+                this.checkEmptyState();
+            }
+
+            setupEventListeners() {
+                // Botões principais
+                document.getElementById('add-list-btn').addEventListener('click', () => {
+                    this.openListModal();
+                });
+
+                document.getElementById('add-first-list').addEventListener('click', () => {
+                    this.openListModal();
+                });
+
+                document.getElementById('share-btn').addEventListener('click', () => {
+                    this.shareBoard();
+                });
+
+                // Formulários
+                document.getElementById('card-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveCard();
+                });
+
+                document.getElementById('list-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveList();
+                });
+
+                // Botões de cancelar
+                document.getElementById('cancel-card').addEventListener('click', () => {
+                    this.closeModal('card-modal');
+                });
+
+                document.getElementById('cancel-list').addEventListener('click', () => {
+                    this.closeModal('list-modal');
+                });
+
+                // Fechar modais ao clicar fora
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            renderBoard() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+
+                this.boardData.lists.forEach(list => {
+                    const listElement = this.createListElement(list);
+                    boardElement.appendChild(listElement);
+                });
+            }
+
+            createListElement(list) {
+                const listDiv = document.createElement('div');
+                listDiv.className = 'list';
+                listDiv.dataset.listId = list.id;
+
+                listDiv.innerHTML = `
+                    <div class="list-header">
+                        <input type="text" class="list-title" value="${list.title}" data-list-id="${list.id}">
+                        <button class="delete-list" data-list-id="${list.id}">×</button>
+                    </div>
+                    <div class="cards" id="cards-${list.id}">
+                        ${list.cards.map(card => this.createCardElement(card)).join('')}
+                    </div>
+                    <div class="add-card" data-list-id="${list.id}">➕ Adicionar um card</div>
+                `;
+
+                // Adicionar event listeners
+                listDiv.querySelector('.delete-list').addEventListener('click', (e) => {
+                    this.deleteList(e.target.dataset.listId);
+                });
+
+                listDiv.querySelector('.list-title').addEventListener('blur', (e) => {
+                    this.updateListTitle(e.target.dataset.listId, e.target.value);
+                });
+
+                listDiv.querySelector('.add-card').addEventListener('click', (e) => {
+                    this.openCardModal(e.target.dataset.listId);
+                });
+
+                // Adicionar listeners para deletar cards
+                listDiv.querySelectorAll('.delete-card').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const cardId = e.target.dataset.cardId;
+                        const listId = e.target.closest('.list').dataset.listId;
+                        this.deleteCard(listId, cardId);
+                    });
+                });
+
+                // Adicionar listeners para editar cards
+                listDiv.querySelectorAll('.card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        if (!e.target.classList.contains('delete-card')) {
+                            const cardId = card.dataset.cardId;
+                            this.editCard(list.id, cardId);
+                        }
+                    });
+                });
+
+                return listDiv;
+            }
+
+            createCardElement(card) {
+                return `
+                    <div class="card" data-card-id="${card.id}">
+                        <button class="delete-card" data-card-id="${card.id}">×</button>
+                        <div class="card-title">${this.escapeHtml(card.title)}</div>
+                        ${card.description ? `<div class="card-desc">${this.escapeHtml(card.description)}</div>` : ''}
+                    </div>
+                `;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            openCardModal(listId, card = null) {
+                document.getElementById('list-id').value = listId;
+                document.getElementById('card-title').value = card ? card.title : '';
+                document.getElementById('card-desc').value = card ? card.description : '';
+                document.getElementById('card-id').value = card ? card.id : '';
+                document.getElementById('modal-title').textContent = card ? 'Editar Card' : 'Adicionar Card';
+                
+                this.openModal('card-modal');
+                document.getElementById('card-title').focus();
+            }
+
+            openListModal() {
+                document.getElementById('list-title').value = '';
+                this.openModal('list-modal');
+                document.getElementById('list-title').focus();
+            }
+
+            openModal(modalId) {
+                document.getElementById(modalId).style.display = 'flex';
+            }
+
+            closeModal(modalId) {
+                document.getElementById(modalId).style.display = 'none';
+            }
+
+            saveCard() {
+                const listId = document.getElementById('list-id').value;
+                const cardId = document.getElementById('card-id').value;
+                const title = document.getElementById('card-title').value;
+                const description = document.getElementById('card-desc').value;
+
+                if (!title.trim()) return;
+
+                const list = this.boardData.lists.find(l => l.id === listId);
+                if (!list) return;
+
+                if (cardId) {
+                    // Editar card existente
+                    const card = list.cards.find(c => c.id === cardId);
+                    if (card) {
+                        card.title = title;
+                        card.description = description;
+                    }
+                } else {
+                    // Adicionar novo card
+                    const newCard = {
+                        id: 'card-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                        title: title,
+                        description: description
+                    };
+                    list.cards.push(newCard);
+                }
+
+                this.saveAndRender();
+                this.closeModal('card-modal');
+            }
+
+            saveList() {
+                const title = document.getElementById('list-title').value.trim();
+                if (!title) return;
+
+                const newList = {
+                    id: 'list-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                    title: title,
+                    cards: []
+                };
+
+                this.boardData.lists.push(newList);
+                this.saveAndRender();
+                this.closeModal('list-modal');
+                this.checkEmptyState();
+            }
+
+            editCard(listId, cardId) {
+                const list = this.boardData.lists.find(l => l.id === listId);
+                const card = list.cards.find(c => c.id === cardId);
+                if (card) {
+                    this.openCardModal(listId, card);
+                }
+            }
+
+            deleteCard(listId, cardId) {
+                const list = this.boardData.lists.find(l => l.id === listId);
+                if (list) {
+                    list.cards = list.cards.filter(c => c.id !== cardId);
+                    this.saveAndRender();
+                }
+            }
+
+            deleteList(listId) {
+                if (confirm('Tem certeza que deseja deletar esta lista e todos os seus cards?')) {
+                    this.boardData.lists = this.boardData.lists.filter(l => l.id !== listId);
+                    this.saveAndRender();
+                    this.checkEmptyState();
+                }
+            }
+
+            updateListTitle(listId, newTitle) {
+                const list = this.boardData.lists.find(l => l.id === listId);
+                if (list && newTitle.trim()) {
+                    list.title = newTitle.trim();
+                    this.saveAndRender();
+                }
+            }
+
+            saveAndRender() {
+                this.saveBoardData();
+                this.renderBoard();
+            }
+
+            shareBoard() {
+                const boardData = localStorage.getItem('trelloBoard-' + this.boardId);
+                if (boardData) {
+                    try {
+                        const compressed = btoa(encodeURIComponent(boardData));
+                        
+                        // Criar URL de compartilhamento
+                        let shareUrl;
+                        if (window.location.protocol === 'file:' || window.location.origin === 'null') {
+                            // Ambiente local - usar caminho absoluto
+                            shareUrl = `${window.location.href.split('?')[0]}?board=${this.boardId}&data=${compressed}`;
+                        } else {
+                            // Servidor web - usar URL completa
+                            shareUrl = `${window.location.origin}${window.location.pathname}?board=${this.boardId}&data=${compressed}`;
+                        }
+                        
+                        // Tentar copiar para clipboard
+                        navigator.clipboard.writeText(shareUrl).then(() => {
+                            this.showNotification();
+                        }).catch(() => {
+                            // Fallback: mostrar URL em prompt
+                            const result = prompt('Copie o link abaixo para compartilhar:', shareUrl);
+                            if (result !== null) {
+                                this.showNotification();
+                            }
+                        });
+                    } catch (error) {
+                        alert('Erro ao gerar link de compartilhamento. Tente novamente.');
+                    }
+                } else {
+                    alert('Nenhum dado para compartilhar. Adicione algumas listas primeiro!');
+                }
+            }
+
+            showNotification() {
+                const notification = document.getElementById('notification');
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            checkEmptyState() {
+                const emptyState = document.getElementById('empty-state');
+                const boardElement = document.getElementById('board');
+                
+                if (this.boardData.lists.length === 0) {
+                    emptyState.style.display = 'block';
+                    boardElement.style.display = 'none';
+                } else {
+                    emptyState.style.display = 'none';
+                    boardElement.style.display = 'flex';
+                }
+            }
+        }
+
+        // Inicializar o app quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            window.trelloApp = new MiniTrello();
+        });
+    </script>
+</body>
+</html>
